@@ -1,0 +1,5 @@
+bsc_pathways/BSC_stuff/*
+bsc_pathways/pathway_enrichment_v1/data/lobular_w_negatives.csv
+bsc_pathways/pathway_enrichment_v1/data/ductal_no_negatives.csv
+bsc_pathways/pathway_enrichment_v1/data/saved_tensors/*
+!bsc_pathways/pathway_enrichment_v1/data/saved_tensors/.gitkeep
