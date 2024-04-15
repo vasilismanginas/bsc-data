@@ -130,10 +130,12 @@ def transform_df(
     stage_dict = {"I": 1, "II": 2, "III": 3}
     df["Stage"] = df["Stage"].apply(lambda s: stage_dict[s])
 
-    # every row in which TrajectoryID is list-like is duplicated for each element in
-    # the list. E.g if row X has TrajectoryID = [1, 2, 3] then the row is deleted and
-    # three copies are created, one where TrajectoryID is 1, one where it is 2, etc.
-    df = df.explode("TrajectoryID")  # EXPLOSION!!!
+    # # the list. E.g if row X has TrajectoryID = [1, 2, 3] then the row is deleted and
+    # # three copies are created, one where TrajectoryID is 1, one where it is 2, etc.
+    # df = df.explode("TrajectoryID")  # EXPLOSION!!! 💣
+
+    # keep only patients that are on one trajectory
+    df = df[df['TrajectoryID'].apply(lambda x: len(x) == 1)]
 
     # create a new column which contains the NES, FDR q-val, and Regulation in one array
     df["Metrics"] = df[["NES", "FDR q-val", "Regulation"]].apply(
