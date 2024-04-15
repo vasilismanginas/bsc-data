@@ -23,16 +23,26 @@ stages_test = pd.read_csv(gene_data_path / "test_clinical_stage.csv")
 all_patients_genes = stages["sample"].to_list() + stages_test["sample"].to_list()
 
 df_all = pd.read_csv(
-    os.path.join(
-        os.getcwd(),
-        "bsc_pathways/pathway_enrichment_v2/data/real_patients_enrichments.csv",
-    ),
+    Path.cwd()
+    / "bsc_pathways/pathway_enrichment_v2/data/real_patients_enrichments.csv",
     index_col=0,
 )
+
 all_patients_pathways = df_all["Patient"].unique().tolist()
 
+ctype_per_patient = {
+    patient: c_type
+    for patient, c_type in df_all[["Patient", "Cancer_Type"]].drop_duplicates().values
+}
 gene_expressions = []
 initial_stages = []
+
+gene_expressions_lobular = []
+initial_stages_lobular = []
+
+gene_expressions_ductal = []
+initial_stages_ductal = []
+
 
 for column_idx, patient_name in enumerate(genes):
     if column_idx != 0:
@@ -40,10 +50,14 @@ for column_idx, patient_name in enumerate(genes):
             gene_array = genes[patient_name].values
             stage = stages[stages["sample"] == patient_name][
                 "ajcc_pathologic_tumor_stage"
-            ].values[0]  # type: ignore
-
-            gene_expressions.append(gene_array)
-            initial_stages.append(stage)
+            ].values[0] # type: ignore
+            
+            if ctype_per_patient[patient_name] == "lobular":
+                gene_expressions_lobular.append(gene_array)
+                initial_stages_lobular.append(stage)
+            elif ctype_per_patient[patient_name] == "ductal":
+                gene_expressions_ductal.append(gene_array)
+                initial_stages_ductal.append(stage)
 
 for column_idx, patient_name in enumerate(genes_test):
     if column_idx != 0:
@@ -52,10 +66,16 @@ for column_idx, patient_name in enumerate(genes_test):
             stage = stages_test[stages_test["sample"] == patient_name][
                 "ajcc_pathologic_tumor_stage"
             ].values[0]  # type: ignore
+            
+            if ctype_per_patient[patient_name] == "lobular":
+                gene_expressions_lobular.append(gene_array)
+                initial_stages_lobular.append(stage)
+            elif ctype_per_patient[patient_name] == "ductal":
+                gene_expressions_ductal.append(gene_array)
+                initial_stages_ductal.append(stage)
 
-            gene_expressions.append(gene_array)
-            initial_stages.append(stage)
 
+csv_str = ""
 
 models_to_test = [
     DecisionTreeClassifier(random_state=1),
@@ -68,17 +88,39 @@ models_to_test = [
 
 results_csv_str = cross_validate_models(
     models_list=models_to_test,
-    X=np.array(gene_expressions),
-    y=np.array(initial_stages),
+    X=np.array(gene_expressions_lobular),
+    y=np.array(initial_stages_lobular),
     num_folds=5,
     print_results=True,
 )
 
+csv_str += "lobular" + "\n"
+csv_str += results_csv_str
 
-csv_name = f"gene_stage_classification_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.csv"  # type: ignore
-csv_path = Path.cwd() / "bsc_pathways/original_genetic_data" / csv_name
+models_to_test = [
+    DecisionTreeClassifier(random_state=1),
+    RandomForestClassifier(random_state=1),
+    GradientBoostingClassifier(random_state=1),
+    XGBClassifier(random_state=1),
+    SVC(random_state=1),
+    MLPClassifier(random_state=1),
+]
+
+results_csv_str = cross_validate_models(
+    models_list=models_to_test,
+    X=np.array(gene_expressions_ductal),
+    y=np.array(initial_stages_ductal),
+    num_folds=5,
+    print_results=True,
+)
+
+csv_str += "ductal" + "\n"
+csv_str += results_csv_str
+
+csv_name = f"gene_stage_classification_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}_separate.csv"  # type: ignore
+csv_path = Path.cwd() / "bsc_pathways/original_genetic_data/results" / csv_name
 f = open(csv_path, "w")
-f.write(results_csv_str)
+f.write(csv_str)
 f.close()
 
 os.system(f"xdg-open {csv_path}")

@@ -18,7 +18,13 @@ rich = "^13.6.0"
 matplotlib = "^3.8.1"
 torchmetrics = "^1.2.0"
 pylint = "^3.0.2"
+pyarrow = "^15.0.0"
+debugpy = "^1.8.1"
+xgboost = "^2.0.3"
 
+
+[tool.poetry.group.dev.dependencies]
+debugpy = "^1.8.1"
 
 [build-system]
 requires = ["poetry-core"]
